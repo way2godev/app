@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model agencies {
+  id           BigInt    @id @default(autoincrement())
+  created_at   DateTime? @db.Timestamptz(6)
+  updated_at   DateTime? @db.Timestamptz(6)
+  deleted_at   DateTime? @db.Timestamptz(6)
+  name         String?
+  raw_id       String?
+  url          String?
+  phone_number String?
+  lines        lines[]
+
+  @@index([deleted_at], map: "idx_agencies_deleted_at")
+}
+
+model line_variants {
+  id         BigInt    @id @default(autoincrement())
+  created_at DateTime? @db.Timestamptz(6)
+  updated_at DateTime? @db.Timestamptz(6)
+  deleted_at DateTime? @db.Timestamptz(6)
+  tag        String?
+  line_id    BigInt?
+  is_default Boolean?  @default(false)
+  lines      lines?    @relation(fields: [line_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lines_line_variants")
+  stops      stops?
+
+  @@index([deleted_at], map: "idx_line_variants_deleted_at")
+}
+
+model lines {
+  id            BigInt          @id @default(autoincrement())
+  created_at    DateTime?       @db.Timestamptz(6)
+  updated_at    DateTime?       @db.Timestamptz(6)
+  deleted_at    DateTime?       @db.Timestamptz(6)
+  name          String?
+  agency_id     BigInt?
+  raw_route_id  String?
+  line_variants line_variants[]
+  agencies      agencies?       @relation(fields: [agency_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_agencies_line")
+
+  @@index([deleted_at], map: "idx_lines_deleted_at")
+}
+
+model schedule_stops {
+  id          BigInt     @id @default(autoincrement())
+  created_at  DateTime?  @db.Timestamptz(6)
+  updated_at  DateTime?  @db.Timestamptz(6)
+  deleted_at  DateTime?  @db.Timestamptz(6)
+  schedule_id BigInt?
+  stop_id     BigInt?
+  order       BigInt?
+  time        DateTime?  @db.Timestamptz(6)
+  schedules   schedules? @relation(fields: [schedule_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_schedules_schedule_stops")
+
+  @@index([deleted_at], map: "idx_schedule_stops_deleted_at")
+}
+
+model schedules {
+  id              BigInt           @id @default(autoincrement())
+  created_at      DateTime?        @db.Timestamptz(6)
+  updated_at      DateTime?        @db.Timestamptz(6)
+  deleted_at      DateTime?        @db.Timestamptz(6)
+  line_variant_id BigInt?
+  days            String?          @default("1111111") @db.VarChar(7)
+  schedule_stops  schedule_stops[]
+
+  @@index([deleted_at], map: "idx_schedules_deleted_at")
+}
+
+model stops {
+  id                 BigInt        @id @default(autoincrement())
+  created_at         DateTime?     @db.Timestamptz(6)
+  updated_at         DateTime?     @db.Timestamptz(6)
+  deleted_at         DateTime?     @db.Timestamptz(6)
+  name               String?
+  latitude           Decimal?      @db.Decimal
+  longitude          Decimal?      @db.Decimal
+  raw_renfe_code     String?
+  adress             String?
+  city               String?
+  postal_code        String?
+  province           String?
+  country            String?
+  weelchair_boarding Boolean?
+  line_variants      line_variants @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_line_variants_final_stop")
+
+  @@index([deleted_at], map: "idx_stops_deleted_at")
+}
